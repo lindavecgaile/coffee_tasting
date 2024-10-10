@@ -27,10 +27,10 @@ def save_data(df):
 data = load_data()
 
 # Streamlit app title and description
-st.title("Coffee Tasting Club")
+st.title("Coffee Snob Club")  # Updated title
 st.header("Enter Coffee Tasting Data")
 
-# Correctly wrap **all input fields** inside a single form with a visible Submit button
+# Correctly wrap all input fields inside a single form with a visible Submit button
 with st.form(key="tasting_form", clear_on_submit=True):
     # Input fields for coffee tasting data inside the form
     session_number = st.text_input("Session Number")         # e.g., "Session 1"
@@ -76,6 +76,50 @@ if submit_button:
 st.header("Previous Tasting Sessions")
 if not data.empty:
     st.dataframe(data)
+
+    # Add selection box for editing and deleting entries
+    selected_index = st.number_input("Select a row to edit or delete", min_value=0, max_value=len(data)-1, step=1)
+    
+    # Show the selected entry details
+    st.write("### Selected Entry:")
+    st.write(data.iloc[selected_index])
+
+    # Handle editing of an existing entry
+    with st.form(key="edit_entry_form"):
+        # Fill in the default values for editing form
+        edited_session_number = st.text_input("Edit Session Number", value=str(data.iloc[selected_index].get("Session Number", "")))
+        edited_tasting_date = st.date_input("Edit Date of Tasting", value=pd.to_datetime(data.iloc[selected_index].get("Date of Tasting", pd.Timestamp.now())))
+        edited_taster_name = st.text_input("Edit Taster Name", value=data.iloc[selected_index].get("Taster", ""))
+        edited_coffee_name = st.text_input("Edit Coffee Name", value=data.iloc[selected_index].get("Coffee Name", ""))
+        edited_roast_level = st.selectbox("Edit Roast Level", ["Light", "Light-Medium", "Medium", "Medium-Dark", "Dark"], index=["Light", "Light-Medium", "Medium", "Medium-Dark", "Dark"].index(data.iloc[selected_index].get("Roast Level", "Medium")))
+        edited_brew_method = st.selectbox("Edit Brew Method", ["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"], index=["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"].index(data.iloc[selected_index].get("Brew Method", "V60")))
+        edited_acidity = st.slider("Edit Acidity (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Acidity", 5)))
+        edited_sweetness = st.slider("Edit Sweetness (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Sweetness", 5)))
+        edited_body = st.slider("Edit Body (1 = Light, 10 = Heavy)", 1, 10, value=int(data.iloc[selected_index].get("Body", 5)))
+        edited_flavor_notes = st.text_input("Edit Flavor Notes", value=data.iloc[selected_index].get("Flavor Notes", ""))
+        edited_overall_rating = st.slider("Edit Overall Rating (1 to 10)", 1, 10, value=int(data.iloc[selected_index].get("Overall Rating", 5)))
+        edited_tasting_notes = st.text_area("Edit Tasting Notes", value=data.iloc[selected_index].get("Tasting Notes", ""))
+
+        # Submit button for editing the entry
+        update_button = st.form_submit_button("Update Entry")
+        if update_button:
+            # Update the selected row with new values
+            data.at[selected_index, "Session Number"] = edited_session_number
+            data.at[selected_index, "Date of Tasting"] = edited_tasting_date
+            data.at[selected_index, "Taster"] = edited_taster_name
+            data.at[selected_index, "Coffee Name"] = edited_coffee_name
+            data.at[selected_index, "Roast Level"] = edited_roast_level
+            data.at[selected_index, "Brew Method"] = edited_brew_method
+            data.at[selected_index, "Acidity"] = edited_acidity
+            data.at[selected_index, "Sweetness"] = edited_sweetness
+            data.at[selected_index, "Body"] = edited_body
+            data.at[selected_index, "Flavor Notes"] = edited_flavor_notes
+            data.at[selected_index, "Overall Rating"] = edited_overall_rating
+            data.at[selected_index, "Tasting Notes"] = edited_tasting_notes
+
+            # Save the updated data back to Google Sheets
+            save_data(data)
+            st.success(f"Entry updated successfully for {edited_taster_name}!")
 
 # Bar Chart: Show average ratings for each coffee grouped by taster
 if not data.empty:
