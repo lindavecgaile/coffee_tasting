@@ -13,9 +13,8 @@ credentials = Credentials.from_service_account_info(st.secrets["gcp_service_acco
 # Authorize the gspread client using the credentials
 client = gspread.authorize(credentials)
 
-# Use the Spreadsheet ID instead of the name to access the Google Sheet
-# Replace the value below with your actual Spreadsheet ID
-sheet = client.open_by_key("1tUS2FvHtcauHZXJlzy6IyKxYSWgJa8fk").sheet1
+# Use the new Spreadsheet ID to access the Google Sheet
+sheet = client.open_by_key("1VEzDuBcyEGGtYT2m0P7uwiZRfTWl84Cb2b7eQkCMOlo").sheet1
 
 # Load data from the Google Sheet into a Pandas DataFrame
 def load_data():
@@ -117,7 +116,6 @@ if not data.empty:
             data.at[selected_index, "Acidity"] = edited_acidity
             data.at[selected_index, "Sweetness"] = edited_sweetness
             data.at[selected_index, "Body"] = edited_body
-            data.at[selected_index, "Flavor Notes"] = edited_flavor
             data.at[selected_index, "Flavor Notes"] = edited_flavor_notes
             data.at[selected_index, "Overall Rating"] = edited_overall_rating
             data.at[selected_index, "Tasting Notes"] = edited_tasting_notes
@@ -125,15 +123,6 @@ if not data.empty:
             # Save the updated data back to Google Sheets
             save_data(data)
             st.success(f"Entry updated successfully for {edited_taster_name}!")
-
-# Add a delete button to remove the selected entry
-if st.button("Delete Selected Entry"):
-    # Drop the selected row from the DataFrame
-    data = data.drop(selected_index).reset_index(drop=True)
-
-    # Save the updated data back to Google Sheets
-    save_data(data)
-    st.success(f"Entry deleted successfully!")
 
 # Bar Chart: Show average ratings for each coffee grouped by taster
 if not data.empty:
