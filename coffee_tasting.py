@@ -15,7 +15,7 @@ credentials = Credentials.from_service_account_info(st.secrets["gcp_service_acco
 # Authorize the gspread client using the credentials
 client = gspread.authorize(credentials)
 
-# Use the new Spreadsheet ID to access the Google Sheet
+# Use the Spreadsheet ID to access the Google Sheet
 sheet = client.open_by_key("1VEzDuBcyEGGtYT2m0P7uwiZRfTWl84Cb2b7eQkCMOlo").sheet1
 
 # Load data from the Google Sheet into a Pandas DataFrame
@@ -35,7 +35,6 @@ data = load_data()
 
 # Streamlit app title and description
 st.title("Coffee Snob Club")
-st.header("Enter Coffee Tasting Data")
 
 # URL of the deployed Streamlit app (replace this with your actual app link)
 app_url = "https://your-app-link.streamlit.app"  # Replace with your actual app URL
@@ -47,6 +46,9 @@ qr.make(fit=True)
 qr_img = qr.make_image(fill_color="black", back_color="white")
 qr_img.save("streamlit_qr_code.png")
 st.image("streamlit_qr_code.png", caption="Scan this QR code to share the Coffee Snob Club app!", use_column_width=True)
+
+# Now add the section title below the QR code
+st.header("Enter Coffee Tasting Data")
 
 # Correctly wrap all input fields inside a single form with a visible Submit button
 with st.form(key="tasting_form", clear_on_submit=True):
