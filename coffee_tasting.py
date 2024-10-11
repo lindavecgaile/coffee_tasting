@@ -27,7 +27,7 @@ def load_data():
 def save_data(df):
     if "Date of Tasting" in df.columns:
         df["Date of Tasting"] = df["Date of Tasting"].astype(str)
-    sheet.clear()  
+    sheet.clear()
     sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
 # Load existing data from Google Sheets
@@ -58,6 +58,7 @@ with st.form(key="tasting_form", clear_on_submit=True):
     coffee_name = st.text_input("Coffee Name")
     roast_level = st.selectbox("Roast Level", ["Light", "Light-Medium", "Medium", "Medium-Dark", "Dark"])
     brew_method = st.selectbox("Brew Method", ["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"])
+    shop_name = st.text_input("Shop Name (Where Coffee Was Bought)")  # New input field for shop name
     acidity = st.slider("Acidity (1 = Low, 10 = High)", 1, 10, 5)
     sweetness = st.slider("Sweetness (1 = Low, 10 = High)", 1, 10, 5)
     body = st.slider("Body (1 = Light, 10 = Heavy)", 1, 10, 5)
@@ -75,6 +76,7 @@ if submit_button:
         "Coffee Name": coffee_name,
         "Roast Level": roast_level,
         "Brew Method": brew_method,
+        "Shop Name": shop_name,  # Save the shop name in the new column
         "Acidity": acidity,
         "Sweetness": sweetness,
         "Body": body,
@@ -104,6 +106,7 @@ if not data.empty:
         edited_coffee_name = st.text_input("Edit Coffee Name", value=data.iloc[selected_index].get("Coffee Name", ""))
         edited_roast_level = st.selectbox("Edit Roast Level", ["Light", "Light-Medium", "Medium", "Medium-Dark", "Dark"], index=["Light", "Light-Medium", "Medium", "Medium-Dark", "Dark"].index(data.iloc[selected_index].get("Roast Level", "Medium")))
         edited_brew_method = st.selectbox("Edit Brew Method", ["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"], index=["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"].index(data.iloc[selected_index].get("Brew Method", "V60")))
+        edited_shop_name = st.text_input("Edit Shop Name", value=data.iloc[selected_index].get("Shop Name", ""))  # Add shop name to the edit form
         edited_acidity = st.slider("Edit Acidity (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Acidity", 5)))
         edited_sweetness = st.slider("Edit Sweetness (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Sweetness", 5)))
         edited_body = st.slider("Edit Body (1 = Light, 10 = Heavy)", 1, 10, value=int(data.iloc[selected_index].get("Body", 5)))
@@ -120,6 +123,7 @@ if not data.empty:
             data.at[selected_index, "Coffee Name"] = edited_coffee_name
             data.at[selected_index, "Roast Level"] = edited_roast_level
             data.at[selected_index, "Brew Method"] = edited_brew_method
+            data.at[selected_index, "Shop Name"] = edited_shop_name  # Save the edited shop name
             data.at[selected_index, "Acidity"] = edited_acidity
             data.at[selected_index, "Sweetness"] = edited_sweetness
             data.at[selected_index, "Body"] = edited_body
