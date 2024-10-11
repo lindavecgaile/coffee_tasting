@@ -23,7 +23,12 @@ def load_data():
 
 # Save the DataFrame back to the Google Sheet
 def save_data(df):
-    sheet.clear()  # Clear the existing data in the sheet
+    # Convert the Date of Tasting column to strings
+    if "Date of Tasting" in df.columns:
+        df["Date of Tasting"] = df["Date of Tasting"].astype(str)
+    
+    # Clear the existing data in the sheet and update with the new data
+    sheet.clear()  
     sheet.update([df.columns.values.tolist()] + df.values.tolist())  # Update with new data
 
 # Load existing data from Google Sheets
