@@ -50,6 +50,9 @@ st.image("streamlit_qr_code.png", caption="Scan this QR code to share the Coffee
 # Now add the section title below the QR code
 st.header("Enter Coffee Tasting Data")
 
+# List of countries for drop-down multi-select
+countries = ["Ethiopia", "Colombia", "Brazil", "Kenya", "Costa Rica", "Guatemala", "Sumatra", "Yemen", "Honduras", "Panama", "Peru", "Jamaica"]
+
 # Wrap all input fields inside a single form with a visible Submit button
 with st.form(key="tasting_form", clear_on_submit=True):
     session_number = st.text_input("Session Number")
@@ -60,6 +63,8 @@ with st.form(key="tasting_form", clear_on_submit=True):
     brew_method = st.selectbox("Brew Method", ["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"])
     shop_name = st.text_input("Shop Name (Where Coffee Was Bought)")
     address = st.text_input("Address (Where Coffee Was Bought)")
+    roasted_at = st.text_input("Where the Coffee Was Roasted")
+    origins = st.multiselect("Select Bean Origin Countries", countries)  # New multi-select field for bean origins
     acidity = st.slider("Acidity (1 = Low, 10 = High)", 1, 10, 5)
     sweetness = st.slider("Sweetness (1 = Low, 10 = High)", 1, 10, 5)
     body = st.slider("Body (1 = Light, 10 = Heavy)", 1, 10, 5)
@@ -78,7 +83,9 @@ if submit_button:
         "Roast Level": roast_level,
         "Brew Method": brew_method,
         "Shop Name": shop_name,
-        "Address": address,  # Include the new address field in the data
+        "Address": address,
+        "Roasted At": roasted_at,
+        "Bean Origin Countries": ", ".join(origins),  # Store multiple selected countries
         "Acidity": acidity,
         "Sweetness": sweetness,
         "Body": body,
@@ -110,6 +117,8 @@ if not data.empty:
         edited_brew_method = st.selectbox("Edit Brew Method", ["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"], index=["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"].index(data.iloc[selected_index].get("Brew Method", "V60")))
         edited_shop_name = st.text_input("Edit Shop Name", value=data.iloc[selected_index].get("Shop Name", ""))
         edited_address = st.text_input("Edit Address", value=data.iloc[selected_index].get("Address", ""))
+        edited_roasted_at = st.text_input("Edit Where Roasted", value=data.iloc[selected_index].get("Roasted At", ""))
+        edited_origins = st.multiselect("Edit Bean Origin Countries", countries, default=data.iloc[selected_index].get("Bean Origin Countries", "").split(", "))
         edited_acidity = st.slider("Edit Acidity (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Acidity", 5)))
         edited_sweetness = st.slider("Edit Sweetness (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Sweetness", 5)))
         edited_body = st.slider("Edit Body (1 = Light, 10 = Heavy)", 1, 10, value=int(data.iloc[selected_index].get("Body", 5)))
@@ -121,19 +130,23 @@ if not data.empty:
         update_button = st.form_submit_button("Update Entry")
         if update_button:
             data.at[selected_index, "Session Number"] = edited_session_number
-            data.at[selected_index, "Date of Tasting"] = str(edited_tasting_date)  # Convert date to string
+            data.at[selected_index, "Date of Tasting"] = str(edited_tasting_date)
             data.at[selected_index, "Taster"] = edited_taster_name
             data.at[selected_index, "Coffee Name"] = edited_coffee_name
             data.at[selected_index, "Roast Level"] = edited_roast_level
             data.at[selected_index, "Brew Method"] = edited_brew_method
             data.at[selected_index, "Shop Name"] = edited_shop_name
             data.at[selected_index, "Address"] = edited_address
+            data.at[selected_index, "Roasted At"] = edited_roasted_at
+            data.at[selected_index, "Bean Origin Countries"] = ", ".join(edited_origins)  # Save multiple countries as a comma-separated string
             data.at[selected_index, "Acidity"] = edited_acidity
             data.at[selected_index, "Sweetness"] = edited_sweetness
             data.at[selected_index, "Body"] = edited_body
             data.at[selected_index, "Flavor Notes"] = edited_flavor_notes
             data.at[selected_index, "Overall Rating"] = edited_overall_rating
             data.at[selected_index, "Tasting Notes"] = edited_tasting_notes
+
+            # Save the updated data back to Google Sheets
             save_data(data)
             st.success(f"Entry updated successfully for {edited_taster_name}!")
 
