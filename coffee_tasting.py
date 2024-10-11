@@ -3,6 +3,8 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 import plotly.express as px
+import qrcode
+from PIL import Image
 
 # Define the required OAuth scopes for Google Sheets and Drive
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -23,43 +25,47 @@ def load_data():
 
 # Save the DataFrame back to the Google Sheet
 def save_data(df):
-    # Convert the Date of Tasting column to strings
     if "Date of Tasting" in df.columns:
         df["Date of Tasting"] = df["Date of Tasting"].astype(str)
-    
-    # Clear the existing data in the sheet and update with the new data
     sheet.clear()  
-    sheet.update([df.columns.values.tolist()] + df.values.tolist())  # Update with new data
+    sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
 # Load existing data from Google Sheets
 data = load_data()
 
 # Streamlit app title and description
-st.title("Coffee Snob Club")  # Updated title
+st.title("Coffee Snob Club")
 st.header("Enter Coffee Tasting Data")
+
+# URL of the deployed Streamlit app (replace this with your actual app link)
+app_url = "https://your-app-link.streamlit.app"  # Replace with your actual app URL
+
+# Generate and display the QR code for easy sharing
+qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
+qr.add_data(app_url)
+qr.make(fit=True)
+qr_img = qr.make_image(fill_color="black", back_color="white")
+qr_img.save("streamlit_qr_code.png")
+st.image("streamlit_qr_code.png", caption="Scan this QR code to share the Coffee Snob Club app!", use_column_width=True)
 
 # Correctly wrap all input fields inside a single form with a visible Submit button
 with st.form(key="tasting_form", clear_on_submit=True):
-    # Input fields for coffee tasting data inside the form
-    session_number = st.text_input("Session Number")         # e.g., "Session 1"
-    tasting_date = st.date_input("Date of Tasting")          # e.g., Date Picker
-    taster_name = st.text_input("Taster Name")               # e.g., "John Doe"
-    coffee_name = st.text_input("Coffee Name")               # e.g., "Ethiopian Yirgacheffe"
+    session_number = st.text_input("Session Number")
+    tasting_date = st.date_input("Date of Tasting")
+    taster_name = st.text_input("Taster Name")
+    coffee_name = st.text_input("Coffee Name")
     roast_level = st.selectbox("Roast Level", ["Light", "Light-Medium", "Medium", "Medium-Dark", "Dark"])
     brew_method = st.selectbox("Brew Method", ["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"])
     acidity = st.slider("Acidity (1 = Low, 10 = High)", 1, 10, 5)
     sweetness = st.slider("Sweetness (1 = Low, 10 = High)", 1, 10, 5)
     body = st.slider("Body (1 = Light, 10 = Heavy)", 1, 10, 5)
-    flavor_notes = st.text_input("Flavor Notes")             # e.g., "Citrus, Berry"
+    flavor_notes = st.text_input("Flavor Notes")
     overall_rating = st.slider("Overall Rating (1 to 10)", 1, 10)
-    tasting_notes = st.text_area("Tasting Notes")            # Detailed comments or observations
-
-    # Visible submit button for the form
-    submit_button = st.form_submit_button(label="Submit")    # Use st.form_submit_button inside the form
+    tasting_notes = st.text_area("Tasting Notes")
+    submit_button = st.form_submit_button(label="Submit")
 
 # Handle the submission
 if submit_button:
-    # Create a new entry from the form inputs
     new_entry = {
         "Session Number": session_number,
         "Date of Tasting": tasting_date,
@@ -74,10 +80,8 @@ if submit_button:
         "Overall Rating": overall_rating,
         "Tasting Notes": tasting_notes,
     }
-
-    # Append the new entry to the existing data
     data = pd.concat([data, pd.DataFrame([new_entry])], ignore_index=True)
-    save_data(data)  # Save the updated data back to Google Sheets
+    save_data(data)
     st.success(f"New tasting session added successfully by {taster_name}!")
 
 # Display existing data in a table
@@ -87,14 +91,11 @@ if not data.empty:
 
     # Add selection box for editing and deleting entries
     selected_index = st.number_input("Select a row to edit or delete", min_value=0, max_value=len(data)-1, step=1)
-    
-    # Show the selected entry details
     st.write("### Selected Entry:")
     st.write(data.iloc[selected_index])
 
     # Handle editing of an existing entry
     with st.form(key="edit_entry_form"):
-        # Fill in the default values for editing form
         edited_session_number = st.text_input("Edit Session Number", value=str(data.iloc[selected_index].get("Session Number", "")))
         edited_tasting_date = st.date_input("Edit Date of Tasting", value=pd.to_datetime(data.iloc[selected_index].get("Date of Tasting", pd.Timestamp.now())))
         edited_taster_name = st.text_input("Edit Taster Name", value=data.iloc[selected_index].get("Taster", ""))
@@ -111,7 +112,6 @@ if not data.empty:
         # Submit button for editing the entry
         update_button = st.form_submit_button("Update Entry")
         if update_button:
-            # Update the selected row with new values
             data.at[selected_index, "Session Number"] = edited_session_number
             data.at[selected_index, "Date of Tasting"] = edited_tasting_date
             data.at[selected_index, "Taster"] = edited_taster_name
@@ -124,8 +124,6 @@ if not data.empty:
             data.at[selected_index, "Flavor Notes"] = edited_flavor_notes
             data.at[selected_index, "Overall Rating"] = edited_overall_rating
             data.at[selected_index, "Tasting Notes"] = edited_tasting_notes
-
-            # Save the updated data back to Google Sheets
             save_data(data)
             st.success(f"Entry updated successfully for {edited_taster_name}!")
 
