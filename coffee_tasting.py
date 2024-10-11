@@ -6,20 +6,11 @@ import plotly.express as px
 import qrcode
 from PIL import Image
 
-# Define the list of countries for Bean Origins
-countries = [
-    "Ethiopia", "Colombia", "Brazil", "Kenya", "Guatemala", "Honduras", "Costa Rica", 
-    "El Salvador", "Panama", "Nicaragua", "Peru", "Rwanda", "Mexico", "Indonesia", 
-    "India", "Tanzania", "Yemen", "Uganda", "Vietnam", "Burundi"
-]
-
-# Load Google Sheets credentials from Streamlit Secrets
+# Google Sheets authentication
 credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"])
-
-# Authorize the gspread client using the credentials from Streamlit secrets
 client = gspread.authorize(credentials)
 
-# Use the new Spreadsheet ID to access the Google Sheet
+# Access the Google Sheet using its ID
 sheet = client.open_by_key("1VEzDuBcyEGGtYT2m0P7uwiZRfTWl84Cb2b7eQkCMOlo").sheet1
 
 # Load data from the Google Sheet into a Pandas DataFrame
@@ -29,62 +20,53 @@ def load_data():
 
 # Save the DataFrame back to the Google Sheet
 def save_data(df):
-    sheet.clear()  # Clear the existing data in the sheet
-    sheet.update([df.columns.values.tolist()] + df.values.tolist())  # Update with new data
+    sheet.clear()
+    sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
 # Load existing data from Google Sheets
 data = load_data()
 
-# Streamlit app title and description
-st.title("Coffee Snob Club")  # Updated title
+# Streamlit app title and QR Code
+st.title("Coffee Snob Club")
+st.subheader("QR Code for Easy Access")
+url = "https://coffeetasting.streamlit.app"  # Replace with your Streamlit app URL
+qr = qrcode.make(url)
+qr_image = qr.get_image().resize((150, 150))  # Resize for display in Streamlit
+st.image(qr_image, caption="Scan this to open the app")
 
-# Generate QR Code
-app_url = "https://coffeetasting.streamlit.app/"
-qr = qrcode.make(app_url)
-qr_image_path = "qr_code.png"
-qr.save(qr_image_path)
-
-# Display QR code
-st.image(qr_image_path, caption="Scan to access the Coffee Snob Club app")
+# Form for coffee tasting data input
 st.header("Enter Coffee Tasting Data")
-
-# Input fields for coffee tasting data inside the form
 with st.form(key="tasting_form", clear_on_submit=True):
-    session_number = st.text_input("Session Number")         # e.g., "Session 1"
-    tasting_date = st.date_input("Date of Tasting")          # e.g., Date Picker
-    taster_name = st.text_input("Taster Name")               # e.g., "John Doe"
-    coffee_name = st.text_input("Coffee Name")               # e.g., "Ethiopian Yirgacheffe"
-    shop_name = st.text_input("Shop Name")                   # e.g., "Local Cafe"
-    address = st.text_area("Address (Where Coffee Was Bought)")  # Detailed shop address
-    roasted_at = st.text_input("Roasted At (Roaster or Location)") # Roaster name or location
-    bean_origins = st.multiselect("Bean Origins (Select one or more)", countries)  # Multi-select for origins
+    session_number = st.text_input("Session Number")
+    tasting_date = st.date_input("Date of Tasting")
+    taster_name = st.text_input("Taster Name")
+    coffee_name = st.text_input("Coffee Name")
+    shop_name = st.text_input("Shop Name")
+    shop_address = st.text_area("Address (Where Coffee Was Bought)")
+    roasted_at = st.text_input("Roasted At")
+    bean_origins = st.multiselect("Bean Origins", ["Ethiopia", "Colombia", "Brazil", "Kenya", "Costa Rica", "Guatemala", "Sumatra", "Yemen"])
     roast_level = st.selectbox("Roast Level", ["Light", "Light-Medium", "Medium", "Medium-Dark", "Dark"])
-    brew_method = st.selectbox("Brew Method", [
-        "V60", "AeroPress", "Espresso", "French Press", "Chemex", 
-        "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"
-    ])
+    brew_method = st.selectbox("Brew Method", ["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"])
     acidity = st.slider("Acidity (1 = Low, 10 = High)", 1, 10, 5)
     sweetness = st.slider("Sweetness (1 = Low, 10 = High)", 1, 10, 5)
     body = st.slider("Body (1 = Light, 10 = Heavy)", 1, 10, 5)
-    flavor_notes = st.text_input("Flavor Notes")             # e.g., "Citrus, Berry"
+    flavor_notes = st.text_input("Flavor Notes")
     overall_rating = st.slider("Overall Rating (1 to 10)", 1, 10)
-    tasting_notes = st.text_area("Tasting Notes")            # Detailed comments or observations
+    tasting_notes = st.text_area("Tasting Notes")
 
-    # Visible submit button for the form
     submit_button = st.form_submit_button(label="Submit")
 
-# Handle the submission
+# Handle submission
 if submit_button:
-    # Create a new entry from the form inputs
     new_entry = {
         "Session Number": session_number,
         "Date of Tasting": tasting_date,
         "Taster": taster_name,
         "Coffee Name": coffee_name,
         "Shop Name": shop_name,
-        "Address": address,
+        "Address": shop_address,
         "Roasted At": roasted_at,
-        "Bean Origins": ", ".join(bean_origins),  # Join list into a comma-separated string
+        "Bean Origins": ", ".join(bean_origins),
         "Roast Level": roast_level,
         "Brew Method": brew_method,
         "Acidity": acidity,
@@ -94,18 +76,16 @@ if submit_button:
         "Overall Rating": overall_rating,
         "Tasting Notes": tasting_notes,
     }
-
-    # Append the new entry to the existing data
     data = pd.concat([data, pd.DataFrame([new_entry])], ignore_index=True)
-    save_data(data)  # Save the updated data back to Google Sheets
+    save_data(data)
     st.success(f"New tasting session added successfully by {taster_name}!")
 
-# Display existing data in a table
+# Display existing data
 st.header("Previous Tasting Sessions")
-if not data.empty:
-    st.dataframe(data)
+st.dataframe(data)
 
-    # Add selection box for editing and deleting entries
+# Add selection box for editing and deleting entries
+if not data.empty:
     selected_index = st.number_input("Select a row to edit or delete", min_value=0, max_value=len(data)-1, step=1)
     
     # Show the selected entry details
@@ -119,14 +99,11 @@ if not data.empty:
         edited_taster_name = st.text_input("Edit Taster Name", value=data.iloc[selected_index].get("Taster", ""))
         edited_coffee_name = st.text_input("Edit Coffee Name", value=data.iloc[selected_index].get("Coffee Name", ""))
         edited_shop_name = st.text_input("Edit Shop Name", value=data.iloc[selected_index].get("Shop Name", ""))
-        edited_address = st.text_area("Edit Address", value=data.iloc[selected_index].get("Address", ""))
+        edited_shop_address = st.text_area("Edit Shop Address", value=data.iloc[selected_index].get("Address", ""))
         edited_roasted_at = st.text_input("Edit Roasted At", value=data.iloc[selected_index].get("Roasted At", ""))
-        edited_bean_origins = st.multiselect("Edit Bean Origins", countries, default=data.iloc[selected_index].get("Bean Origins", "").split(", "))  # Multi-select field for origins
+        edited_bean_origins = st.multiselect("Edit Bean Origins", ["Ethiopia", "Colombia", "Brazil", "Kenya", "Costa Rica", "Guatemala", "Sumatra", "Yemen"], default=data.iloc[selected_index].get("Bean Origins", "").split(", "))
         edited_roast_level = st.selectbox("Edit Roast Level", ["Light", "Light-Medium", "Medium", "Medium-Dark", "Dark"], index=["Light", "Light-Medium", "Medium", "Medium-Dark", "Dark"].index(data.iloc[selected_index].get("Roast Level", "Medium")))
-        edited_brew_method = st.selectbox("Edit Brew Method", [
-            "V60", "AeroPress", "Espresso", "French Press", "Chemex", 
-            "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"
-        ], index=["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"].index(data.iloc[selected_index].get("Brew Method", "V60")))
+        edited_brew_method = st.selectbox("Edit Brew Method", ["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"], index=["V60", "AeroPress", "Espresso", "French Press", "Chemex", "Cold Brew", "Moka Pot", "Pour Over", "Siphon", "Turkish Coffee"].index(data.iloc[selected_index].get("Brew Method", "V60")))
         edited_acidity = st.slider("Edit Acidity (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Acidity", 5)))
         edited_sweetness = st.slider("Edit Sweetness (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Sweetness", 5)))
         edited_body = st.slider("Edit Body (1 = Light, 10 = Heavy)", 1, 10, value=int(data.iloc[selected_index].get("Body", 5)))
@@ -134,18 +111,16 @@ if not data.empty:
         edited_overall_rating = st.slider("Edit Overall Rating (1 to 10)", 1, 10, value=int(data.iloc[selected_index].get("Overall Rating", 5)))
         edited_tasting_notes = st.text_area("Edit Tasting Notes", value=data.iloc[selected_index].get("Tasting Notes", ""))
 
-        # Submit button for editing the entry
         update_button = st.form_submit_button("Update Entry")
         if update_button:
-            # Update the selected row with new values
             data.at[selected_index, "Session Number"] = edited_session_number
             data.at[selected_index, "Date of Tasting"] = edited_tasting_date
             data.at[selected_index, "Taster"] = edited_taster_name
             data.at[selected_index, "Coffee Name"] = edited_coffee_name
             data.at[selected_index, "Shop Name"] = edited_shop_name
-            data.at[selected_index, "Address"] = edited_address
+            data.at[selected_index, "Address"] = edited_shop_address
             data.at[selected_index, "Roasted At"] = edited_roasted_at
-            data.at[selected_index, "Bean Origins"] = ", ".join(edited_bean_origins)  # Join list into a comma-separated string
+            data.at[selected_index, "Bean Origins"] = ", ".join(edited_bean_origins)
             data.at[selected_index, "Roast Level"] = edited_roast_level
             data.at[selected_index, "Brew Method"] = edited_brew_method
             data.at[selected_index, "Acidity"] = edited_acidity
@@ -155,7 +130,6 @@ if not data.empty:
             data.at[selected_index, "Overall Rating"] = edited_overall_rating
             data.at[selected_index, "Tasting Notes"] = edited_tasting_notes
 
-            # Save the updated data back to Google Sheets
             save_data(data)
             st.success(f"Entry updated successfully for {edited_taster_name}!")
 
