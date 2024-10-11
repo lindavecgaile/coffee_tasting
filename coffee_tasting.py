@@ -39,7 +39,8 @@ data["Bean Origin Countries"] = data["Bean Origin Countries"].fillna("").astype(
 st.title("Coffee Snob Club")
 
 # URL of the deployed Streamlit app (replace this with your actual app link)
-app_url = "https://your-app-link.streamlit.app"  # Replace with your actual app URL
+# app_url = "https://your-app-link.streamlit.app"  # Replace with your actual app URL
+app_url = "https://coffeetasting.streamlit.app"  # Replace with your actual app URL
 
 # Generate and display the QR code for easy sharing
 qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
