@@ -32,6 +32,9 @@ def save_data(df):
 # Load existing data from Google Sheets
 data = load_data()
 
+# Preprocess 'Bean Origin Countries' to ensure no NaN or unexpected types
+data["Bean Origin Countries"] = data["Bean Origin Countries"].fillna("").astype(str)
+
 # Streamlit app title and description
 st.title("Coffee Snob Club")
 
@@ -117,7 +120,13 @@ if not data.empty:
         edited_shop_name = st.text_input("Edit Shop Name", value=data.iloc[selected_index].get("Shop Name", ""))
         edited_address = st.text_input("Edit Address", value=data.iloc[selected_index].get("Address", ""))
         edited_roasted_at = st.text_input("Edit Roasted At", value=data.iloc[selected_index].get("Roasted At", ""))
-        edited_origins = st.multiselect("Edit Bean Origin Countries", countries, default=data.iloc[selected_index].get("Bean Origin Countries", "").split(", "))
+        
+        # Corrected to handle missing or malformed data
+        default_origins = data.iloc[selected_index].get("Bean Origin Countries", "")
+        if not isinstance(default_origins, str):
+            default_origins = ""
+        edited_origins = st.multiselect("Edit Bean Origin Countries", countries, default=default_origins.split(", ") if default_origins else [])
+        
         edited_acidity = st.slider("Edit Acidity (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Acidity", 5)))
         edited_sweetness = st.slider("Edit Sweetness (1 = Low, 10 = High)", 1, 10, value=int(data.iloc[selected_index].get("Sweetness", 5)))
         edited_body = st.slider("Edit Body (1 = Light, 10 = Heavy)", 1, 10, value=int(data.iloc[selected_index].get("Body", 5)))
